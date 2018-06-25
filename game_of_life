@@ -1,0 +1,170 @@
+#include <stdio.h>
+
+	static int[] current;
+	static int[] next;
+	static int rows;
+	static int columns;
+	static int generations;
+
+	static void readBoard(String file_name) {
+		String line;
+		int cursor;
+		FILE* input;
+
+		try {
+			input = fopen("input.txt", "r");
+
+			fscanf(input,"%d",generations);
+			fscanf(input,"%d",rows);
+			fscanf(input,"%d",columns);
+			input.nextLine();
+
+			// Allocate memory for the boards including boundaries
+			current = new int[rows*columns];
+			next = new int[rows*columns];
+
+			// Initialise all the cells including boundaries
+			cursor = 0;
+			for (int row = 0; row < rows; row++) {
+				for (int column = 0; column < columns; column++) {
+					current[cursor] = 0;
+					next[cursor] = 0;
+					cursor = cursor + 1;
+				}
+			}
+
+			// Read in the data
+			cursor = columns + 1;
+			for (int row = 1; row < rows - 1; row++) {
+				line = input.nextLine();
+				for (int column = 1; column < columns - 1; column++) {
+					// Place in center area leaving boundaries clear
+					current[cursor] = ('*' == line.charAt(column - 1)) ? 1
+							: 0;
+					cursor = cursor + 1;
+				}
+				cursor = cursor + 2; 
+			}
+
+			fclose(input);
+
+		} catch (IOException caught) {
+			System.out.println("Something happened when reading file "
+					+ file_name);
+			System.out.println(caught);
+			caught.printStackTrace();
+		}
+
+	}
+
+	static void nextGeneration() {
+		int[] temporary;
+		int neighbours;
+		int cursor;
+
+		cursor = columns + 1;
+		for (int row = 1; row < rows - 1; row++) {
+			for (int column = 1; column < columns - 1; column++) {
+				neighbours = current[cursor - columns - 1]
+						+ current[cursor - columns]
+						+ current[cursor - columns + 1] + current[cursor - 1]
+						+ current[cursor + 1] + current[cursor + columns - 1]
+						+ current[cursor + columns]
+						+ current[cursor + columns + 1];
+
+				switch (neighbours) {
+				case 0:
+				case 1:
+					next[cursor] = 0;
+					break;
+				case 2:
+					next[cursor] = current[cursor];
+					break;
+				case 3:
+					next[cursor] = 1;
+					break;
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+				case 8:
+					next[cursor] = 0;
+					break;
+				default:
+					next[cursor] = 0;
+					assert (false);
+					break;
+				}
+				
+				cursor = cursor + 1;
+			}
+			// Skip the boundary at the end of each row
+			cursor = cursor + 2;
+		}
+
+		/* Swap the boards */
+		temporary = current;
+		current = next;
+		next = temporary;
+	}
+
+	static void printBoard(PrintStream output) {
+		int cursor;
+		
+		cursor = columns + 1;
+		for (int row = 1; row < rows - 1; row++) {
+			for (int column = 1; column < columns - 1; column++) {
+				if (1 == current[cursor]) {
+					output.print('*');
+				} else {
+					output.print('.');
+				}
+				cursor = cursor + 1;
+			}
+			
+			// Skip the boundary at the end of a row
+			cursor = cursor + 2;
+			output.println();
+		}
+
+		output.close();
+	}
+
+	public static void main(String[] arguments) {
+		time_t start;
+		time_t end;
+		 output =  fopen("output.txt", "w");
+
+		readBoard(arguments[0]);
+
+		if (2 < arguments.length) {
+			generations = Integer.parseInt(arguments[2]);
+		}
+
+		time(&start);
+		for (int generation = 0; generation < generations; generation++) {
+			nextGeneration();
+		}
+		time(&end);
+
+		System.out.printf("Runtime was %.6f\n",
+				((double) (end - start)) / 1.0E6d);
+
+		try {
+			if (1 < arguments.length) {
+				output = new inputs("arguments[1]", "r");
+			} else {
+				output = System.out;
+			}
+
+			printBoard(output);
+
+			if (output != System.out) {
+				fclose(output);
+			}
+
+		} catch (IOException caught) {
+			System.err.println("Something bad happened during output");
+		}
+	}
+}

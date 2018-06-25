@@ -1,0 +1,1 @@
+Open the .class files in a internet browser to be able to read them
